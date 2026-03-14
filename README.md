@@ -9,6 +9,7 @@ pip install -r requirements.txt
 python -m tests.test_research_agent       # Phase 1: Research Agent only
 python -m tests.test_qualification_agent  # Phase 1+2: Research → Qualification
 python -m tests.test_full_pipeline        # Full pipeline: Research → Qualification → Routing → Engagement
+python -m tests.test_feedback_loop        # Feedback loop: outcome analysis + weight recalibration
 ```
 
 ## Project Structure
@@ -23,6 +24,7 @@ ai-lead-qualification/
 │   ├── qualification_agent.py  # Qualification Agent — scoring & decisions
 │   ├── routing_agent.py        # Routing Agent — territory, round-robin, SLA
 │   ├── engagement_agent.py     # Engagement Agent — personalized sequences
+│   ├── feedback_loop.py        # Feedback Loop — outcome tracking & retraining
 │   ├── enrichment_providers.py # Clearbit, Apollo, Hunter + Mock providers
 │   └── hubspot_integration.py  # HubSpot CRM bidirectional sync
 ├── workflows/
@@ -33,7 +35,8 @@ ai-lead-qualification/
 ├── tests/
 │   ├── test_research_agent.py       # Research Agent demo (5 scenarios)
 │   ├── test_qualification_agent.py  # Qualification demo (6 scenarios)
-│   └── test_full_pipeline.py        # Full 4-agent pipeline (4 scenarios)
+│   ├── test_full_pipeline.py        # Full 4-agent pipeline (4 scenarios)
+│   └── test_feedback_loop.py        # Feedback loop analysis demo
 ├── .env.example
 ├── .gitignore
 └── requirements.txt
@@ -156,10 +159,46 @@ AI-powered personalized outreach sequence generation with multi-touch cadences.
 - **Template fallback** — Full template bank when LLM is unavailable, still personalized with lead data
 - **Strategy upgrades** — Warm leads with C-level seniority auto-upgrade to Accelerate cadence
 
+## Feedback Loop (Phase 5)
+
+Closes the loop by tracking deal outcomes and using them to improve the scoring model over time.
+
+### What It Does
+
+1. **Outcome Capture** — Links closed-won/lost deals back to their original lead scores
+2. **Pattern Analysis** — Statistical correlation analysis: which scoring dimensions predict wins?
+3. **Weight Recalibration** — Adjusts the 4 dimension weights (bounded ±5% per cycle, min 10%, max 50%)
+4. **Drift Detection** — Alerts when score separation, win rate, or high-score loss rate degrades
+5. **ICP Refinement** — Suggests industry, employee range, and source changes based on won deals
+
+### Drift Alerts
+
+| Check | Warning | Critical |
+|-------|---------|----------|
+| Score separation | <75% of baseline | <50% of baseline |
+| Qualified win rate | <80% of baseline | <60% of baseline |
+| High-score losses | >30% of losses scored 80+ | — |
+
+### Safety Constraints
+
+- Max weight adjustment: ±5% per dimension per cycle
+- Minimum sample size: 20 outcomes before recalibrating
+- All weights must stay between 10%-50% and sum to 100%
+- ICP changes are suggestions only — human review required
+
 ## Roadmap
+
+All 5 phases are complete:
 
 - [x] **Phase 1**: Research Agent (enrichment + AI analysis)
 - [x] **Phase 2**: Qualification Agent (scoring + classification)
 - [x] **Phase 3**: Routing Agent (territory + round-robin + SLA)
 - [x] **Phase 4**: Engagement Agent (personalized multi-touch sequences)
-- [ ] **Phase 5**: Feedback loop (outcome tracking + model retraining)
+- [x] **Phase 5**: Feedback Loop (outcome tracking + model retraining)
+
+### Potential Extensions
+- Vector store (Pinecone/Weaviate) for ICP similarity matching
+- Real-time webhook listeners for HubSpot deal stage changes
+- Engagement reply detection + automatic sequence adjustment
+- Dashboard backend API (FastAPI) for live data
+- Multi-tenant support for agency deployments
