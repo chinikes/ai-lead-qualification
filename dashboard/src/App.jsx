@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
+const API = "";  // Same origin — Vercel serves both dashboard and API
 
 const TEMP_CONFIG = {
   hot: { color: "#EF4444", bg: "rgba(239,68,68,0.12)", label: "HOT", icon: "▲" },
@@ -17,31 +18,9 @@ const DECISION_CONFIG = {
 
 const STAGE_LABELS = ["Intake", "Enrichment", "AI Analysis", "Scoring", "Decision", "Routed"];
 
-const REPS = [
-  { id: "rep_001", name: "Jessica Torres", territory: "US West", avatar: "JT", color: "#3B82F6" },
-  { id: "rep_002", name: "Marcus Johnson", territory: "US East", avatar: "MJ", color: "#10B981" },
-  { id: "rep_003", name: "Aisha Patel", territory: "US Central", avatar: "AP", color: "#F59E0B" },
-  { id: "rep_004", name: "David Kim", territory: "International", avatar: "DK", color: "#A855F7" },
-];
-
-const MOCK_LEADS = [
-  { id: "ld_001", email: "sarah.chen@techcorp.io", name: "Sarah Chen", title: "VP of Sales", company: "TechCorp Solutions", industry: "SaaS", employees: 340, revenue: "$45M", source: "web_form", message: "Looking to automate lead qualification. Spending 20+ hrs/week on manual review. What's pricing for 15 reps?", stage: 5, scores: { firmographic: 89, demographic: 92, behavioral: 86, ai_fit: 78 }, composite: 86.4, temperature: "hot", decision: "qualified", signals: ["Explicit pricing inquiry", "Quantified pain (20+ hrs/week)", "Team size mentioned"], painPoints: ["Manual lead review bottleneck", "Rep time waste on unqualified leads"], talkingPoints: ["ROI: 20hrs/week x 15 reps = 300hrs saved", "Case study: Similar SaaS cut review time 80%"], confidence: 0.92, flags: [], routing: { rep: "Jessica Torres", repId: "rep_001", territory: "US West", sla: "15 min" }, timestamp: Date.now() - 180000 },
-  { id: "ld_002", email: "james.wilson@megahealth.com", name: "James Wilson", title: "Director of Sales Ops", company: "MegaHealth Systems", industry: "Healthcare Tech", employees: 1200, revenue: "$180M", source: "linkedin", message: "Saw your post about AI lead scoring. Evaluating options to improve pipeline visibility.", stage: 5, scores: { firmographic: 81, demographic: 88, behavioral: 52, ai_fit: 71 }, composite: 74.2, temperature: "warm", decision: "qualified", signals: ["Active evaluation", "Pipeline visibility need"], painPoints: ["Pipeline visibility gaps"], talkingPoints: ["Healthcare compliance features", "Salesforce integration"], confidence: 0.85, flags: [], routing: { rep: "Marcus Johnson", repId: "rep_002", territory: "US East", sla: "1 hour" }, timestamp: Date.now() - 420000 },
-  { id: "ld_003", email: "alex.martinez@acmewidgets.com", name: "Alex Martinez", title: "Sales Manager", company: "Acme Widgets", industry: "Manufacturing", employees: 120, revenue: "$20M", source: "chat_widget", message: "Interested in learning more about your platform.", stage: 5, scores: { firmographic: 54, demographic: 62, behavioral: 41, ai_fit: 45 }, composite: 51.3, temperature: "cool", decision: "nurture", signals: ["Inbound inquiry"], painPoints: ["General sales efficiency"], talkingPoints: ["Manufacturing case studies"], confidence: 0.68, flags: ["low_confidence"], routing: null, timestamp: Date.now() - 900000 },
-  { id: "ld_004", email: "john.doe@gmail.com", name: "John Doe", title: "Consultant", company: "Unknown", industry: "Unknown", employees: null, revenue: null, source: "chat_widget", message: "Just exploring options for a client.", stage: 4, scores: { firmographic: 12, demographic: 35, behavioral: 28, ai_fit: 18 }, composite: 22.8, temperature: "cold", decision: "needs_review", signals: [], painPoints: [], talkingPoints: [], confidence: 0.31, flags: ["free_email", "low_confidence"], routing: null, timestamp: Date.now() - 1800000 },
-  { id: "ld_005", email: "priya.patel@finova.io", name: "Priya Patel", title: "CRO", company: "Finova Analytics", industry: "FinTech", employees: 85, revenue: "$12M", source: "referral", message: "Our board is pushing us to improve sales efficiency. Need a demo this week if possible.", stage: 5, scores: { firmographic: 78, demographic: 95, behavioral: 92, ai_fit: 88 }, composite: 88.1, temperature: "hot", decision: "qualified", signals: ["Board-level mandate", "Urgent timeline", "Demo request", "Referral source"], painPoints: ["Board pressure on sales efficiency"], talkingPoints: ["Executive onboarding", "Demo within 24hrs"], confidence: 0.94, flags: [], routing: { rep: "Jessica Torres", repId: "rep_001", territory: "US West", sla: "15 min" }, timestamp: Date.now() - 60000 },
-  { id: "ld_006", email: "tom.baker@genericcorp.net", name: "Tom Baker", title: "Junior Analyst", company: "GenericCorp", industry: "Consulting", employees: 15, revenue: "$1M", source: "email", message: "Hi", stage: 5, scores: { firmographic: 18, demographic: 8, behavioral: 15, ai_fit: 10 }, composite: 13.0, temperature: "cold", decision: "disqualified", signals: [], painPoints: [], talkingPoints: [], confidence: 0.45, flags: ["company_too_small"], routing: null, timestamp: Date.now() - 3600000 },
-  { id: "ld_007", email: "elena.voss@datastream.ai", name: "Elena Voss", title: "VP Business Dev", company: "DataStream AI", industry: "SaaS", employees: 280, revenue: "$35M", source: "web_form", message: "We need to streamline our SDR workflow. Losing deals due to slow response times.", stage: 5, scores: { firmographic: 85, demographic: 90, behavioral: 75, ai_fit: 80 }, composite: 82.8, temperature: "hot", decision: "qualified", signals: ["Speed-to-lead concern", "Deal loss acknowledgment"], painPoints: ["Slow response times causing lost deals"], talkingPoints: ["Real-time routing cuts response to <5min"], confidence: 0.89, flags: [], routing: { rep: "Aisha Patel", repId: "rep_003", territory: "US Central", sla: "15 min" }, timestamp: Date.now() - 300000 },
-  { id: "ld_008", email: "liam.chen@globaledge.co.uk", name: "Liam Chen", title: "Head of Sales", company: "GlobalEdge", industry: "Financial Services", employees: 520, revenue: "$78M", source: "referral", message: "Our CRO mentioned your platform. Rebuilding our entire lead management process.", stage: 5, scores: { firmographic: 82, demographic: 86, behavioral: 80, ai_fit: 76 }, composite: 81.2, temperature: "hot", decision: "qualified", signals: ["CRO referral", "Process rebuild initiative"], painPoints: ["Legacy lead management"], talkingPoints: ["Migration support", "Enterprise onboarding"], confidence: 0.88, flags: [], routing: { rep: "David Kim", repId: "rep_004", territory: "International", sla: "1 hour" }, timestamp: Date.now() - 540000 },
-];
-
-const NEW_LEADS_POOL = [
-  { email: "nina.zhao@cloudstack.dev", name: "Nina Zhao", title: "Head of Growth", company: "CloudStack", industry: "DevTools", employees: 210, revenue: "$28M", source: "web_form", message: "Can your system integrate with HubSpot? We need to replace our manual scoring.", scores: { firmographic: 72, demographic: 85, behavioral: 78, ai_fit: 74 }, composite: 77.1, temperature: "warm", decision: "qualified", signals: ["Integration question", "Manual process replacement"], painPoints: ["Manual scoring spreadsheet"], repId: "rep_002" },
-  { email: "raj.kumar@salesengine.io", name: "Raj Kumar", title: "VP Revenue Ops", company: "SalesEngine", industry: "SaaS", employees: 450, revenue: "$62M", source: "referral", message: "Sam at TechCorp recommended you. Our SDR team is drowning in unqualified leads.", scores: { firmographic: 91, demographic: 94, behavioral: 88, ai_fit: 82 }, composite: 89.2, temperature: "hot", decision: "qualified", signals: ["Referral from customer", "Explicit pain statement"], painPoints: ["SDR overwhelm with unqualified leads"], repId: "rep_001" },
-  { email: "maria.silva@retailhub.co", name: "Maria Silva", title: "Marketing Manager", company: "RetailHub", industry: "E-commerce", employees: 65, revenue: "$8M", source: "linkedin", message: "Saw your case study. Interesting approach.", scores: { firmographic: 55, demographic: 42, behavioral: 35, ai_fit: 38 }, composite: 43.0, temperature: "cool", decision: "nurture", signals: ["Content engagement"], painPoints: [], repId: null },
-  { email: "omar.hassan@velocitycrm.com", name: "Omar Hassan", title: "CTO", company: "VelocityCRM", industry: "SaaS", employees: 180, revenue: "$22M", source: "web_form", message: "Looking for an API-first lead scoring solution we can embed in our own product.", scores: { firmographic: 78, demographic: 70, behavioral: 82, ai_fit: 68 }, composite: 74.8, temperature: "warm", decision: "qualified", signals: ["API-first requirement", "Product embedding use case"], painPoints: ["Need embeddable solution"], repId: "rep_003" },
-  { email: "sophie.laurent@nexgen.fr", name: "Sophie Laurent", title: "Directrice Commerciale", company: "NexGen Solutions", industry: "Technology", employees: 310, revenue: "28M EUR", source: "event", message: "We met at SaaStr. Interested in your AI qualification for the EU market.", scores: { firmographic: 74, demographic: 82, behavioral: 65, ai_fit: 70 }, composite: 73.0, temperature: "warm", decision: "qualified", signals: ["Event follow-up", "EU market expansion"], painPoints: ["EU market qualification needs"], repId: "rep_004" },
-];
+const STATUS_TO_STAGE = {
+  new: 0, enriching: 1, enriched: 2, scoring: 3, scored: 4, routed: 5, engaged: 5, failed: 0,
+};
 
 function m(extra = {}) { return { fontFamily: "'JetBrains Mono', monospace", ...extra }; }
 
@@ -53,9 +32,9 @@ function ScoreBar({ value, color = "#3B82F6", height = 5 }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
       <div style={{ flex: 1, height, background: "rgba(255,255,255,0.06)", borderRadius: height / 2, overflow: "hidden" }}>
-        <div style={{ width: `${Math.min(value, 100)}%`, height: "100%", background: color, borderRadius: height / 2, transition: "width 0.5s ease" }} />
+        <div style={{ width: `${Math.min(value || 0, 100)}%`, height: "100%", background: color, borderRadius: height / 2, transition: "width 0.5s ease" }} />
       </div>
-      <span style={{ ...m({ fontSize: 10, color: "rgba(255,255,255,0.45)", minWidth: 22, textAlign: "right" }) }}>{Math.round(value)}</span>
+      <span style={{ ...m({ fontSize: 10, color: "rgba(255,255,255,0.45)", minWidth: 22, textAlign: "right" }) }}>{Math.round(value || 0)}</span>
     </div>
   );
 }
@@ -71,7 +50,7 @@ function MetricCard({ label, value, sub, accent }) {
 }
 
 function PipelineFunnel({ leads }) {
-  const stages = STAGE_LABELS.map((l, i) => ({ l, c: leads.filter(x => x.stage >= i).length }));
+  const stages = STAGE_LABELS.map((l, i) => ({ l, c: leads.filter(x => (STATUS_TO_STAGE[x.status] || 0) >= i).length }));
   const mx = Math.max(...stages.map(s => s.c), 1);
   return (
     <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 56 }}>
@@ -87,94 +66,124 @@ function PipelineFunnel({ leads }) {
   );
 }
 
-function ScoringTrendsChart({ history }) {
-  if (history.length < 2) return <div style={{ color: "rgba(255,255,255,0.15)", fontSize: 10, fontStyle: "italic", padding: 12 }}>Simulate leads to see trends</div>;
-  const w = 320, h = 100, p = 8;
-  const pts = history.slice(-24);
-  const xS = (w - p * 2) / Math.max(pts.length - 1, 1);
-  const tY = v => h - p - (v / 100) * (h - p * 2);
-  const mkLine = (key) => pts.map((pt, i) => `${p + i * xS},${tY(pt[key])}`).join(" ");
-  return (
-    <div>
-      <svg width="100%" viewBox={`0 0 ${w} ${h}`} style={{ display: "block" }}>
-        {[25, 50, 75].map(v => <line key={v} x1={p} x2={w - p} y1={tY(v)} y2={tY(v)} stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />)}
-        <polyline points={mkLine("qualRate")} fill="none" stroke="#10B981" strokeWidth="1.5" strokeLinejoin="round" opacity="0.5" />
-        <polyline points={mkLine("avg")} fill="none" stroke="#3B82F6" strokeWidth="1.5" strokeLinejoin="round" />
-        <circle cx={p + (pts.length - 1) * xS} cy={tY(pts[pts.length - 1].avg)} r="3" fill="#3B82F6" />
-        <circle cx={p + (pts.length - 1) * xS} cy={tY(pts[pts.length - 1].qualRate)} r="3" fill="#10B981" opacity="0.5" />
-      </svg>
-      <div style={{ display: "flex", gap: 14, marginTop: 4 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}><div style={{ width: 8, height: 2, background: "#3B82F6", borderRadius: 1 }} /><span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Avg score ({Math.round(pts[pts.length - 1].avg)})</span></div>
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}><div style={{ width: 8, height: 2, background: "#10B981", borderRadius: 1, opacity: 0.5 }} /><span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)" }}>Qual rate ({Math.round(pts[pts.length - 1].qualRate)}%)</span></div>
-      </div>
-    </div>
-  );
+/* ── Transform DB lead to display format ─────────── */
+function transformLead(dbLead) {
+  const score = dbLead.scores?.[0] || {};
+  const route = dbLead.routing?.[0] || {};
+  const signals = (dbLead.ai_buying_signals || []).map(s => typeof s === "string" ? s : s.signal).filter(Boolean);
+  const pains = (dbLead.ai_pain_points || []).map(p => typeof p === "string" ? p : p.pain_point).filter(Boolean);
+  return {
+    id: dbLead.id,
+    email: dbLead.email,
+    name: dbLead.contact_full_name || [dbLead.first_name, dbLead.last_name].filter(Boolean).join(" ") || dbLead.email || "Unknown",
+    title: dbLead.contact_title || dbLead.job_title || "Unknown",
+    company: dbLead.company_legal_name || dbLead.company_name || dbLead.company_domain || "Unknown",
+    industry: dbLead.company_industry || "Unknown",
+    employees: dbLead.company_employee_count,
+    revenue: dbLead.company_revenue,
+    source: dbLead.source || "web_form",
+    message: dbLead.message,
+    status: dbLead.status || "new",
+    stage: STATUS_TO_STAGE[dbLead.status] || 0,
+    scores: {
+      firmographic: score.firmographic_score || 0,
+      demographic: score.demographic_score || 0,
+      behavioral: score.behavioral_score || 0,
+      ai_fit: score.ai_fit_score || 0,
+    },
+    composite: score.composite_score || 0,
+    temperature: score.temperature || "cold",
+    decision: score.decision || "needs_review",
+    signals,
+    painPoints: pains,
+    talkingPoints: dbLead.ai_talking_points || [],
+    confidence: dbLead.overall_confidence || 0,
+    flags: dbLead.flags || [],
+    routing: route.assigned_rep_name ? {
+      rep: route.assigned_rep_name,
+      repId: route.assigned_rep_id,
+      territory: route.territory,
+      sla: `${route.sla_response_minutes || 60} min`,
+    } : null,
+    timestamp: new Date(dbLead.created_at).getTime(),
+  };
 }
 
+/* ── Activity Feed ───────────────────────────────── */
 function ActivityFeed({ events }) {
   const ref = useRef(null);
   useEffect(() => { if (ref.current) ref.current.scrollTop = 0; }, [events.length]);
-  const icons = { intake: { i: "→", c: "#6B7280" }, enriched: { i: "◈", c: "#14B8A6" }, scored: { i: "▣", c: "#3B82F6" }, qualified: { i: "✓", c: "#10B981" }, nurture: { i: "~", c: "#F59E0B" }, review: { i: "?", c: "#8B5CF6" }, disqualified: { i: "✗", c: "#EF4444" }, routed: { i: "⇒", c: "#10B981" } };
+  const icons = { intake: { i: "→", c: "#6B7280" }, enriching: { i: "◈", c: "#14B8A6" }, enriched: { i: "◈", c: "#14B8A6" }, analyzed: { i: "◈", c: "#A855F7" }, scored: { i: "▣", c: "#3B82F6" }, qualified: { i: "✓", c: "#10B981" }, nurture: { i: "~", c: "#F59E0B" }, review: { i: "?", c: "#8B5CF6" }, disqualified: { i: "✗", c: "#EF4444" }, routed: { i: "⇒", c: "#10B981" }, failed: { i: "!", c: "#EF4444" } };
   return (
-    <div ref={ref} style={{ maxHeight: 220, overflowY: "auto" }}>
-      {events.slice(0, 40).map((ev, i) => {
-        const cfg = icons[ev.type] || icons.intake;
-        const age = Math.round((Date.now() - ev.ts) / 1000);
+    <div ref={ref} style={{ maxHeight: 280, overflowY: "auto" }}>
+      {events.map((ev, i) => {
+        const cfg = icons[ev.event_type] || icons.intake;
+        const age = Math.round((Date.now() - new Date(ev.created_at).getTime()) / 1000);
         const ageS = age < 60 ? `${age}s` : age < 3600 ? `${Math.round(age / 60)}m` : `${Math.round(age / 3600)}h`;
-        return <div key={ev.id} style={{ display: "flex", gap: 7, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.025)", opacity: Math.max(0.35, 1 - i * 0.035), animation: i === 0 ? "fadeIn 0.25s ease" : "none" }}>
+        return <div key={ev.id} style={{ display: "flex", gap: 7, padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.025)", opacity: Math.max(0.35, 1 - i * 0.03) }}>
           <span style={{ ...m({ fontSize: 10, fontWeight: 600 }), color: cfg.c, minWidth: 12, textAlign: "center" }}>{cfg.i}</span>
-          <span style={{ flex: 1, fontSize: 10, color: "rgba(255,255,255,0.5)", lineHeight: 1.3 }}>{ev.msg}</span>
+          <span style={{ flex: 1, fontSize: 10, color: "rgba(255,255,255,0.5)", lineHeight: 1.3 }}>{ev.message}</span>
           <span style={{ ...m({ fontSize: 8 }), color: "rgba(255,255,255,0.18)" }}>{ageS}</span>
         </div>;
       })}
-      {events.length === 0 && <div style={{ color: "rgba(255,255,255,0.15)", fontSize: 10, fontStyle: "italic", padding: 10 }}>Simulate leads to see activity</div>}
+      {events.length === 0 && <div style={{ color: "rgba(255,255,255,0.15)", fontSize: 10, fontStyle: "italic", padding: 10 }}>No activity yet — submit a lead to get started</div>}
     </div>
   );
 }
 
-function RepPerformance({ leads }) {
+/* ── New Lead Form ───────────────────────────────── */
+function NewLeadForm({ onSubmit, isProcessing }) {
+  const [form, setForm] = useState({ email: "", first_name: "", last_name: "", company_domain: "", job_title: "", message: "", source: "web_form" });
+  const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
+
+  const handleSubmit = () => {
+    if (!form.email && !form.company_domain) return;
+    onSubmit(form);
+    setForm({ email: "", first_name: "", last_name: "", company_domain: "", job_title: "", message: "", source: "web_form" });
+  };
+
+  const inputStyle = {
+    width: "100%", padding: "8px 10px", background: "rgba(255,255,255,0.04)",
+    border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, color: "#fff",
+    fontSize: 12, fontFamily: "'DM Sans', sans-serif", outline: "none",
+  };
+  const labelStyle = { fontSize: 9, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600, marginBottom: 3, display: "block" };
+
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-      {REPS.map(rep => {
-        const rl = leads.filter(l => l.routing?.repId === rep.id);
-        const avg = rl.length > 0 ? rl.reduce((s, l) => s + l.composite, 0) / rl.length : 0;
-        const hot = rl.filter(l => l.temperature === "hot").length;
-        return <div key={rep.id} style={{ padding: "10px 12px", background: "rgba(255,255,255,0.025)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)", position: "relative", overflow: "hidden" }}>
-          <div style={{ position: "absolute", top: 0, left: 0, width: `${Math.min(rl.length * 14, 100)}%`, height: "100%", background: `${rep.color}06`, transition: "width 0.4s" }} />
-          <div style={{ position: "relative" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}>
-              <div style={{ width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: rep.color, background: `${rep.color}18`, border: `1px solid ${rep.color}35` }}>{rep.avatar}</div>
-              <div><div style={{ fontSize: 10, fontWeight: 600, color: "#fff", lineHeight: 1.1 }}>{rep.name}</div><div style={{ fontSize: 8, color: "rgba(255,255,255,0.25)" }}>{rep.territory}</div></div>
-            </div>
-            <div style={{ display: "flex", gap: 14 }}>
-              {[["Leads", rl.length, "#fff"], ["Hot", hot, hot > 0 ? "#EF4444" : "rgba(255,255,255,0.15)"], ["Avg", rl.length > 0 ? Math.round(avg) : "—", avg >= 75 ? "#10B981" : avg >= 50 ? "#F59E0B" : "rgba(255,255,255,0.3)"]].map(([lbl, val, clr]) => (
-                <div key={lbl}><div style={{ fontSize: 8, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" }}>{lbl}</div><div style={{ ...m({ fontSize: 13, fontWeight: 700 }), color: clr }}>{val}</div></div>
-              ))}
-            </div>
-          </div>
-        </div>;
-      })}
+    <div style={{ padding: 16 }}>
+      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600, marginBottom: 12 }}>Submit New Lead</div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+        <div><label style={labelStyle}>Email</label><input style={inputStyle} value={form.email} onChange={e => set("email", e.target.value)} placeholder="sarah@company.com" /></div>
+        <div><label style={labelStyle}>Domain</label><input style={inputStyle} value={form.company_domain} onChange={e => set("company_domain", e.target.value)} placeholder="company.com" /></div>
+        <div><label style={labelStyle}>First Name</label><input style={inputStyle} value={form.first_name} onChange={e => set("first_name", e.target.value)} /></div>
+        <div><label style={labelStyle}>Last Name</label><input style={inputStyle} value={form.last_name} onChange={e => set("last_name", e.target.value)} /></div>
+        <div><label style={labelStyle}>Job Title</label><input style={inputStyle} value={form.job_title} onChange={e => set("job_title", e.target.value)} placeholder="VP of Sales" /></div>
+        <div>
+          <label style={labelStyle}>Source</label>
+          <select style={{ ...inputStyle, appearance: "none" }} value={form.source} onChange={e => set("source", e.target.value)}>
+            {["web_form", "referral", "linkedin", "chat_widget", "email", "event", "api"].map(s => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
+          </select>
+        </div>
+      </div>
+      <div style={{ marginBottom: 10 }}><label style={labelStyle}>Message</label><textarea style={{ ...inputStyle, minHeight: 50, resize: "vertical" }} value={form.message} onChange={e => set("message", e.target.value)} placeholder="What brought them in..." /></div>
+      <button
+        onClick={handleSubmit}
+        disabled={isProcessing || (!form.email && !form.company_domain)}
+        style={{
+          width: "100%", padding: "10px", borderRadius: 6, cursor: isProcessing ? "wait" : "pointer",
+          ...m({ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em" }),
+          background: isProcessing ? "rgba(59,130,246,0.08)" : "rgba(59,130,246,0.15)",
+          color: "#3B82F6", border: "1px solid rgba(59,130,246,0.25)",
+          opacity: (!form.email && !form.company_domain) ? 0.4 : 1,
+        }}
+      >
+        {isProcessing ? "PROCESSING..." : "SUBMIT & QUALIFY LEAD"}
+      </button>
     </div>
   );
 }
 
-function LeadRow({ lead, isSelected, onClick }) {
-  const t = TEMP_CONFIG[lead.temperature], d = DECISION_CONFIG[lead.decision];
-  const age = Math.round((Date.now() - lead.timestamp) / 60000);
-  return (
-    <div onClick={onClick} style={{ display: "grid", gridTemplateColumns: "1fr 80px 55px 85px 60px 38px", alignItems: "center", padding: "9px 14px", cursor: "pointer", background: isSelected ? "rgba(59,130,246,0.07)" : "transparent", borderLeft: isSelected ? "2px solid #3B82F6" : "2px solid transparent", borderBottom: "1px solid rgba(255,255,255,0.025)", transition: "all 0.1s" }}
-      onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = "rgba(255,255,255,0.015)"; }}
-      onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}>
-      <div><div style={{ fontSize: 12, fontWeight: 600, color: "#fff", marginBottom: 1 }}>{lead.name}</div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>{lead.title} · {lead.company}</div></div>
-      <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>{lead.source.replace("_", " ")}</div>
-      <span style={{ ...m({ fontSize: 12, fontWeight: 600 }), color: t.color }}>{lead.composite.toFixed(1)}</span>
-      <Badge label={d.label} color={d.color} bg={d.bg} />
-      <Badge label={`${t.icon} ${t.label}`} color={t.color} bg={t.bg} />
-      <span style={{ ...m({ fontSize: 8 }), color: "rgba(255,255,255,0.2)" }}>{age < 60 ? `${age}m` : `${Math.round(age / 60)}h`}</span>
-    </div>
-  );
-}
-
+/* ── Lead Row ────────────────────────────────────── */
 function StageTimeline({ lead }) {
   return <div style={{ display: "flex", alignItems: "center", padding: "5px 14px 1px" }}>
     {STAGE_LABELS.map((_, i) => {
@@ -187,9 +196,29 @@ function StageTimeline({ lead }) {
   </div>;
 }
 
+function LeadRow({ lead, isSelected, onClick }) {
+  const t = TEMP_CONFIG[lead.temperature] || TEMP_CONFIG.cold;
+  const d = DECISION_CONFIG[lead.decision] || DECISION_CONFIG.needs_review;
+  const age = Math.round((Date.now() - lead.timestamp) / 60000);
+  return (
+    <div onClick={onClick} style={{ display: "grid", gridTemplateColumns: "1fr 80px 55px 85px 60px 38px", alignItems: "center", padding: "9px 14px", cursor: "pointer", background: isSelected ? "rgba(59,130,246,0.07)" : "transparent", borderLeft: isSelected ? "2px solid #3B82F6" : "2px solid transparent", borderBottom: "1px solid rgba(255,255,255,0.025)", transition: "all 0.1s" }}
+      onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = "rgba(255,255,255,0.015)"; }}
+      onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}>
+      <div><div style={{ fontSize: 12, fontWeight: 600, color: "#fff", marginBottom: 1 }}>{lead.name}</div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>{lead.title} · {lead.company}</div></div>
+      <div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)" }}>{(lead.source || "").replace("_", " ")}</div>
+      <span style={{ ...m({ fontSize: 12, fontWeight: 600 }), color: t.color }}>{(lead.composite || 0).toFixed(1)}</span>
+      <Badge label={d.label} color={d.color} bg={d.bg} />
+      <Badge label={`${t.icon} ${t.label}`} color={t.color} bg={t.bg} />
+      <span style={{ ...m({ fontSize: 8 }), color: "rgba(255,255,255,0.2)" }}>{age < 60 ? `${age}m` : `${Math.round(age / 60)}h`}</span>
+    </div>
+  );
+}
+
+/* ── Lead Detail Panel ───────────────────────────── */
 function LeadDetail({ lead }) {
   if (!lead) return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "rgba(255,255,255,0.12)", fontSize: 11, fontStyle: "italic" }}>Select a lead to inspect</div>;
-  const t = TEMP_CONFIG[lead.temperature], d = DECISION_CONFIG[lead.decision];
+  const t = TEMP_CONFIG[lead.temperature] || TEMP_CONFIG.cold;
+  const d = DECISION_CONFIG[lead.decision] || DECISION_CONFIG.needs_review;
   const dims = [{ k: "firmographic", l: "Firmographic", c: "#14B8A6" }, { k: "demographic", l: "Demographic", c: "#F97316" }, { k: "behavioral", l: "Behavioral", c: "#3B82F6" }, { k: "ai_fit", l: "AI Fit", c: "#A855F7" }];
   const Sec = ({ title, children }) => <div style={{ marginBottom: 14 }}><div style={{ fontSize: 8, color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, fontWeight: 600 }}>{title}</div>{children}</div>;
 
@@ -200,6 +229,7 @@ function LeadDetail({ lead }) {
           <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#fff" }}>{lead.name}</h3>
           <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 1 }}>{lead.title}</div>
           <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", marginTop: 1 }}>{lead.company} · {lead.industry}{lead.employees ? ` · ${lead.employees} emp` : ""}</div>
+          {lead.email && <div style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", marginTop: 2 }}>{lead.email}</div>}
         </div>
         <div style={{ display: "flex", gap: 4, alignItems: "flex-start" }}>
           <Badge label={`${t.icon} ${t.label}`} color={t.color} bg={t.bg} />
@@ -207,87 +237,147 @@ function LeadDetail({ lead }) {
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: 12, background: "rgba(255,255,255,0.025)", borderRadius: 8, marginBottom: 14, border: "1px solid rgba(255,255,255,0.05)" }}>
-        <div style={{ ...m({ fontSize: 30, fontWeight: 700 }), color: t.color, lineHeight: 1 }}>{lead.composite.toFixed(1)}</div>
-        <div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Composite</div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", marginTop: 2 }}>Confidence: {Math.round(lead.confidence * 100)}%</div></div>
+        <div style={{ ...m({ fontSize: 30, fontWeight: 700 }), color: t.color, lineHeight: 1 }}>{(lead.composite || 0).toFixed(1)}</div>
+        <div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Composite</div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", marginTop: 2 }}>Confidence: {Math.round((lead.confidence || 0) * 100)}%</div></div>
       </div>
-      <Sec title="Score Breakdown">{dims.map(d => <div key={d.k} style={{ marginBottom: 5 }}><div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}><span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>{d.l}</span><span style={{ ...m({ fontSize: 10 }), color: d.c }}>{lead.scores[d.k]}</span></div><ScoreBar value={lead.scores[d.k]} color={d.c} height={4} /></div>)}</Sec>
+      <Sec title="Score Breakdown">{dims.map(d => <div key={d.k} style={{ marginBottom: 5 }}><div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}><span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>{d.l}</span><span style={{ ...m({ fontSize: 10 }), color: d.c }}>{Math.round(lead.scores?.[d.k] || 0)}</span></div><ScoreBar value={lead.scores?.[d.k] || 0} color={d.c} height={4} /></div>)}</Sec>
       {lead.message && <Sec title="Message"><div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", lineHeight: 1.5, padding: 9, background: "rgba(255,255,255,0.02)", borderRadius: 6, borderLeft: "2px solid rgba(59,130,246,0.2)" }}>"{lead.message}"</div></Sec>}
-      {lead.signals.length > 0 && <Sec title="Buying Signals">{lead.signals.map((s, i) => <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3, fontSize: 10, color: "rgba(255,255,255,0.45)" }}><span style={{ color: "#10B981", fontSize: 6 }}>●</span>{s}</div>)}</Sec>}
-      {lead.painPoints.length > 0 && <Sec title="Pain Points">{lead.painPoints.map((p, i) => <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3, fontSize: 10, color: "rgba(255,255,255,0.45)" }}><span style={{ color: "#F59E0B", fontSize: 6 }}>●</span>{p}</div>)}</Sec>}
-      {lead.talkingPoints.length > 0 && <Sec title="Talking Points">{lead.talkingPoints.map((t, i) => <div key={i} style={{ display: "flex", gap: 5, marginBottom: 3, fontSize: 10, color: "rgba(255,255,255,0.45)" }}><span style={{ color: "#3B82F6", fontSize: 9 }}>→</span>{t}</div>)}</Sec>}
-      {lead.flags.length > 0 && <Sec title="Flags"><div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>{lead.flags.map((f, i) => <Badge key={i} label={f.replace(/_/g, " ").toUpperCase()} color="#F59E0B" bg="rgba(245,158,11,0.08)" />)}</div></Sec>}
+      {lead.signals?.length > 0 && <Sec title="Buying Signals">{lead.signals.map((s, i) => <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3, fontSize: 10, color: "rgba(255,255,255,0.45)" }}><span style={{ color: "#10B981", fontSize: 6 }}>●</span>{s}</div>)}</Sec>}
+      {lead.painPoints?.length > 0 && <Sec title="Pain Points">{lead.painPoints.map((p, i) => <div key={i} style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 3, fontSize: 10, color: "rgba(255,255,255,0.45)" }}><span style={{ color: "#F59E0B", fontSize: 6 }}>●</span>{p}</div>)}</Sec>}
+      {lead.talkingPoints?.length > 0 && <Sec title="Talking Points">{lead.talkingPoints.map((tp, i) => <div key={i} style={{ display: "flex", gap: 5, marginBottom: 3, fontSize: 10, color: "rgba(255,255,255,0.45)" }}><span style={{ color: "#3B82F6", fontSize: 9 }}>→</span>{tp}</div>)}</Sec>}
+      {lead.flags?.length > 0 && <Sec title="Flags"><div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>{lead.flags.map((f, i) => <Badge key={i} label={f.replace(/_/g, " ").toUpperCase()} color="#F59E0B" bg="rgba(245,158,11,0.08)" />)}</div></Sec>}
       {lead.routing && <div style={{ padding: 9, background: "rgba(16,185,129,0.04)", borderRadius: 6, border: "1px solid rgba(16,185,129,0.1)" }}><div style={{ fontSize: 8, color: "#10B981", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 5, fontWeight: 600 }}>Routing</div><div style={{ fontSize: 10, color: "rgba(255,255,255,0.45)" }}>Rep: {lead.routing.rep} · Territory: {lead.routing.territory} · SLA: {lead.routing.sla}</div></div>}
     </div>
   );
 }
 
+/* ── Main Dashboard ──────────────────────────────── */
 export default function Dashboard() {
-  const [leads, setLeads] = useState(MOCK_LEADS);
+  const [leads, setLeads] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [filter, setFilter] = useState("all");
   const [events, setEvents] = useState([]);
-  const [history, setHistory] = useState([]);
   const [view, setView] = useState("leads");
   const [pulse, setPulse] = useState(true);
-  const nli = useRef(0), eid = useRef(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const pollRef = useRef(null);
 
   useEffect(() => { const t = setInterval(() => setPulse(p => !p), 1200); return () => clearInterval(t); }, []);
+
+  // ── Fetch leads ───────────────────────────────────
+  const fetchLeads = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/api/leads?limit=100`);
+      if (!res.ok) throw new Error(`${res.status}`);
+      const data = await res.json();
+      setLeads((data.leads || []).map(transformLead));
+      setError(null);
+    } catch (e) {
+      console.error("Fetch leads error:", e);
+      setError("Cannot reach API — check Vercel deployment");
+    }
+  }, []);
+
+  // ── Fetch activity ────────────────────────────────
+  const fetchActivity = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/api/activity?limit=40`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setEvents(data.events || []);
+    } catch (e) { /* silent */ }
+  }, []);
+
+  // ── Initial load + polling ────────────────────────
   useEffect(() => {
-    const q = leads.filter(l => l.decision === "qualified").length, tot = leads.length || 1;
-    const avg = leads.reduce((s, l) => s + l.composite, 0) / tot;
-    setHistory(p => [...p.slice(-30), { avg: Math.round(avg * 10) / 10, qualRate: Math.round((q / tot) * 100), ts: Date.now() }]);
-  }, [leads.length]);
+    fetchLeads();
+    fetchActivity();
+    pollRef.current = setInterval(() => {
+      fetchLeads();
+      fetchActivity();
+    }, 5000);
+    return () => clearInterval(pollRef.current);
+  }, [fetchLeads, fetchActivity]);
 
-  const addEv = useCallback((type, msg) => { eid.current++; setEvents(p => [{ id: eid.current, type, msg, ts: Date.now() }, ...p.slice(0, 60)]); }, []);
+  // ── Submit new lead ───────────────────────────────
+  const handleSubmitLead = async (formData) => {
+    setIsProcessing(true);
+    setError(null);
+    try {
+      // Step 1: Create the lead
+      const createRes = await fetch(`${API}/api/leads`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (!createRes.ok) throw new Error("Failed to create lead");
+      const { lead } = await createRes.json();
 
-  const simulate = useCallback(() => {
-    const tpl = NEW_LEADS_POOL[nli.current % NEW_LEADS_POOL.length]; nli.current++;
-    const id = `ld_${Date.now()}`;
-    setLeads(p => [{ ...tpl, id, stage: 0, confidence: 0, flags: [], signals: [], painPoints: [], talkingPoints: [], routing: null, timestamp: Date.now() }, ...p]);
-    addEv("intake", `New lead: ${tpl.name} (${tpl.company})`);
-    [
-      { s: 1, t: "enriched", m: `Enriching ${tpl.name} — ${tpl.company}` },
-      { s: 2, t: "enriched", m: `AI analysis complete for ${tpl.company}` },
-      { s: 3, t: "scored", m: `Scored ${tpl.name}: ${tpl.composite.toFixed(1)}/100` },
-      { s: 4, t: tpl.decision === "qualified" ? "qualified" : tpl.decision === "nurture" ? "nurture" : tpl.decision === "needs_review" ? "review" : "disqualified", m: `${tpl.name} → ${tpl.decision.toUpperCase()}` },
-      { s: 5, t: tpl.decision === "qualified" ? "routed" : tpl.decision, m: tpl.decision === "qualified" ? `Routed ${tpl.name} to ${REPS.find(r => r.id === tpl.repId)?.name || "queue"}` : `${tpl.name} — complete` },
-    ].forEach((ev, i) => {
-      setTimeout(() => {
-        setLeads(p => p.map(l => l.id !== id ? l : {
-          ...l, stage: ev.s, confidence: ev.s >= 4 ? tpl.confidence || 0.7 : ev.s * 0.15,
-          scores: ev.s >= 3 ? tpl.scores : { firmographic: 0, demographic: 0, behavioral: 0, ai_fit: 0 },
-          composite: ev.s >= 4 ? tpl.composite : 0, temperature: ev.s >= 4 ? tpl.temperature : "cold",
-          decision: ev.s >= 5 ? tpl.decision : "needs_review",
-          signals: ev.s >= 4 ? (tpl.signals || []) : [], painPoints: ev.s >= 4 ? (tpl.painPoints || []) : [],
-          talkingPoints: ev.s >= 5 ? (tpl.talkingPoints || []) : [],
-          routing: ev.s >= 5 && tpl.decision === "qualified" ? { rep: REPS.find(r => r.id === tpl.repId)?.name || "Auto", repId: tpl.repId, territory: REPS.find(r => r.id === tpl.repId)?.territory || "RR", sla: tpl.temperature === "hot" ? "15 min" : "1 hour" } : null,
-        }));
-        addEv(ev.t, ev.m);
-      }, (i + 1) * 850);
-    });
-  }, [addEv]);
+      // Immediately refresh to show the new lead
+      await fetchLeads();
+      setShowForm(false);
+
+      // Step 2: Process it (enrichment → AI → scoring)
+      const processRes = await fetch(`${API}/api/process`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lead_id: lead.id }),
+      });
+      if (!processRes.ok) throw new Error("Pipeline processing failed");
+
+      // Refresh again to show results
+      await fetchLeads();
+      await fetchActivity();
+
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const sel = leads.find(l => l.id === selectedId);
+  const scored = leads.filter(l => l.stage >= 4);
   const filt = filter === "all" ? leads : leads.filter(l => l.decision === filter);
-  const st = { total: leads.length, qual: leads.filter(l => l.decision === "qualified").length, avg: leads.length > 0 ? (leads.reduce((s, l) => s + l.composite, 0) / leads.length).toFixed(1) : "0", hot: leads.filter(l => l.temperature === "hot").length };
-  const qr = leads.length > 0 ? Math.round((st.qual / leads.length) * 100) : 0;
+
+  const st = {
+    total: leads.length,
+    qual: scored.filter(l => l.decision === "qualified").length,
+    avg: scored.length > 0 ? (scored.reduce((s, l) => s + l.composite, 0) / scored.length).toFixed(1) : "0",
+    hot: scored.filter(l => l.temperature === "hot").length,
+  };
+  const qr = scored.length > 0 ? Math.round((st.qual / scored.length) * 100) : 0;
 
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#0A0B0E", color: "#fff", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
 
-
+      {/* Header */}
       <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 18px", borderBottom: "1px solid rgba(255,255,255,0.05)", background: "rgba(255,255,255,0.012)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
           <div style={{ width: 6, height: 6, borderRadius: "50%", background: pulse ? "#10B981" : "rgba(16,185,129,0.25)", boxShadow: pulse ? "0 0 6px rgba(16,185,129,0.35)" : "none", transition: "all 0.3s" }} />
           <span style={{ ...m({ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em" }), color: "rgba(255,255,255,0.6)" }}>LEAD QUALIFICATION OPS</span>
-          <span style={{ ...m({ fontSize: 8 }), color: "rgba(255,255,255,0.15)" }}>v2.0</span>
+          <span style={{ ...m({ fontSize: 8 }), color: "rgba(255,255,255,0.15)" }}>LIVE</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {["leads", "analytics"].map(v => <button key={v} onClick={() => setView(v)} style={{ ...m({ fontSize: 9, fontWeight: 500 }), padding: "4px 10px", borderRadius: 4, cursor: "pointer", background: view === v ? "rgba(255,255,255,0.07)" : "transparent", color: view === v ? "#fff" : "rgba(255,255,255,0.3)", border: view === v ? "1px solid rgba(255,255,255,0.1)" : "1px solid transparent", textTransform: "uppercase", letterSpacing: "0.05em" }}>{v}</button>)}
-          <button onClick={simulate} style={{ ...m({ fontSize: 9, fontWeight: 600, letterSpacing: "0.04em" }), padding: "5px 12px", borderRadius: 4, background: "rgba(59,130,246,0.1)", color: "#3B82F6", border: "1px solid rgba(59,130,246,0.2)", cursor: "pointer" }}>+ SIMULATE LEAD</button>
+          <button onClick={() => setShowForm(p => !p)} style={{ ...m({ fontSize: 9, fontWeight: 600, letterSpacing: "0.04em" }), padding: "5px 12px", borderRadius: 4, background: showForm ? "rgba(239,68,68,0.12)" : "rgba(59,130,246,0.1)", color: showForm ? "#EF4444" : "#3B82F6", border: `1px solid ${showForm ? "rgba(239,68,68,0.2)" : "rgba(59,130,246,0.2)"}`, cursor: "pointer" }}>
+            {showForm ? "CANCEL" : "+ NEW LEAD"}
+          </button>
         </div>
       </header>
 
+      {/* Error banner */}
+      {error && <div style={{ padding: "8px 18px", background: "rgba(239,68,68,0.1)", color: "#EF4444", fontSize: 11, borderBottom: "1px solid rgba(239,68,68,0.15)" }}>{error}</div>}
+
+      {/* Processing indicator */}
+      {isProcessing && <div style={{ padding: "6px 18px", background: "rgba(59,130,246,0.08)", color: "#3B82F6", fontSize: 10, borderBottom: "1px solid rgba(59,130,246,0.1)", ...m() }}>Processing lead through pipeline... enrichment → AI analysis → scoring</div>}
+
+      {/* New Lead Form (collapsible) */}
+      {showForm && <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.015)" }}><NewLeadForm onSubmit={handleSubmitLead} isProcessing={isProcessing} /></div>}
+
+      {/* Metrics */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, padding: "12px 18px" }}>
         <MetricCard label="Total Leads" value={st.total} />
         <MetricCard label="Qualified" value={st.qual} accent="#10B981" sub={`${qr}% rate`} />
@@ -299,6 +389,7 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Main Content */}
       {view === "leads" ? (
         <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 320px", borderTop: "1px solid rgba(255,255,255,0.05)", overflow: "hidden" }}>
           <div style={{ display: "flex", flexDirection: "column", borderRight: "1px solid rgba(255,255,255,0.05)" }}>
@@ -314,56 +405,58 @@ export default function Dashboard() {
             </div>
             <div style={{ flex: 1, overflowY: "auto" }}>
               {filt.map(l => <div key={l.id}><StageTimeline lead={l} /><LeadRow lead={l} isSelected={selectedId === l.id} onClick={() => setSelectedId(l.id)} /></div>)}
-              {filt.length === 0 && <div style={{ padding: 28, textAlign: "center", color: "rgba(255,255,255,0.12)", fontSize: 11, fontStyle: "italic" }}>No leads match filter</div>}
+              {filt.length === 0 && <div style={{ padding: 28, textAlign: "center", color: "rgba(255,255,255,0.12)", fontSize: 11, fontStyle: "italic" }}>{leads.length === 0 ? "No leads yet — click + NEW LEAD to get started" : "No leads match filter"}</div>}
             </div>
           </div>
           <div style={{ background: "rgba(255,255,255,0.008)", overflowY: "auto" }}><LeadDetail lead={sel} /></div>
         </div>
       ) : (
+        /* Analytics View */
         <div style={{ flex: 1, padding: "14px 18px", overflowY: "auto", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
-            <div style={{ padding: 16, background: "rgba(255,255,255,0.025)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10 }}>Scoring Trends</div>
-              <ScoringTrendsChart history={history} />
-            </div>
+            {/* Decision Distribution */}
             <div style={{ padding: 16, background: "rgba(255,255,255,0.025)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
               <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10 }}>Decision Distribution</div>
               {Object.entries(DECISION_CONFIG).map(([k, cfg]) => {
-                const cnt = leads.filter(l => l.decision === k).length, pct = leads.length > 0 ? (cnt / leads.length) * 100 : 0;
+                const cnt = scored.filter(l => l.decision === k).length;
+                const pct = scored.length > 0 ? (cnt / scored.length) * 100 : 0;
                 return <div key={k} style={{ marginBottom: 7 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}><span style={{ fontSize: 10, color: cfg.color }}>{cfg.label}</span><span style={{ ...m({ fontSize: 10 }), color: "rgba(255,255,255,0.4)" }}>{cnt} ({Math.round(pct)}%)</span></div>
                   <div style={{ height: 5, background: "rgba(255,255,255,0.04)", borderRadius: 3, overflow: "hidden" }}><div style={{ width: `${pct}%`, height: "100%", background: cfg.color, borderRadius: 3, opacity: 0.6, transition: "width 0.3s" }} /></div>
                 </div>;
               })}
             </div>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+
+            {/* Score by Source */}
             <div style={{ padding: 16, background: "rgba(255,255,255,0.025)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10 }}>Rep Performance</div>
-              <RepPerformance leads={leads} />
-            </div>
-            <div style={{ padding: 16, background: "rgba(255,255,255,0.025)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>Live Activity</div>
-                <div style={{ display: "flex", alignItems: "center", gap: 4 }}><div style={{ width: 4, height: 4, borderRadius: "50%", background: pulse ? "#10B981" : "rgba(16,185,129,0.2)", transition: "all 0.3s" }} /><span style={{ ...m({ fontSize: 8 }), color: "rgba(255,255,255,0.2)" }}>{events.length} events</span></div>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10 }}>Avg Score by Source</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+                {["web_form", "referral", "linkedin", "chat_widget"].map(src => {
+                  const sl = scored.filter(l => l.source === src);
+                  const avg = sl.length > 0 ? sl.reduce((s, l) => s + l.composite, 0) / sl.length : 0;
+                  const h = Math.max((avg / 100) * 50, 3);
+                  const clr = avg >= 75 ? "#10B981" : avg >= 50 ? "#F59E0B" : avg >= 25 ? "#3B82F6" : "#6B7280";
+                  return <div key={src} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                    <span style={{ ...m({ fontSize: 11, fontWeight: 600 }), color: avg > 0 ? clr : "rgba(255,255,255,0.1)" }}>{avg > 0 ? Math.round(avg) : "—"}</span>
+                    <div style={{ width: "65%", height: h, background: clr, borderRadius: 2, opacity: 0.5 }} />
+                    <span style={{ fontSize: 7, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" }}>{src.replace("_", " ")}</span>
+                    <span style={{ ...m({ fontSize: 8 }), color: "rgba(255,255,255,0.15)" }}>{sl.length}</span>
+                  </div>;
+                })}
               </div>
-              <ActivityFeed events={events} />
             </div>
           </div>
+
+          {/* Activity Feed */}
           <div style={{ padding: 16, background: "rgba(255,255,255,0.025)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
-            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 10 }}>Average Score by Source</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6 }}>
-              {["web_form", "referral", "linkedin", "chat_widget", "email", "event"].map(src => {
-                const sl = leads.filter(l => l.source === src), avg = sl.length > 0 ? sl.reduce((s, l) => s + l.composite, 0) / sl.length : 0;
-                const h = Math.max((avg / 100) * 50, 3), clr = avg >= 75 ? "#10B981" : avg >= 50 ? "#F59E0B" : avg >= 25 ? "#3B82F6" : "#6B7280";
-                return <div key={src} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-                  <span style={{ ...m({ fontSize: 11, fontWeight: 600 }), color: avg > 0 ? clr : "rgba(255,255,255,0.1)" }}>{avg > 0 ? Math.round(avg) : "—"}</span>
-                  <div style={{ width: "65%", height: h, background: clr, borderRadius: 2, opacity: 0.5, transition: "height 0.3s" }} />
-                  <span style={{ fontSize: 7, color: "rgba(255,255,255,0.25)", textTransform: "uppercase" }}>{src.replace("_", " ")}</span>
-                  <span style={{ ...m({ fontSize: 8 }), color: "rgba(255,255,255,0.15)" }}>{sl.length}</span>
-                </div>;
-              })}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>Live Activity</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <div style={{ width: 4, height: 4, borderRadius: "50%", background: pulse ? "#10B981" : "rgba(16,185,129,0.2)", transition: "all 0.3s" }} />
+                <span style={{ ...m({ fontSize: 8 }), color: "rgba(255,255,255,0.2)" }}>{events.length} events · polling 5s</span>
+              </div>
             </div>
+            <ActivityFeed events={events} />
           </div>
         </div>
       )}
