@@ -1,3 +1,5 @@
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 """
 POST /api/leads — Create a new lead
 GET  /api/leads — List all leads with scores
@@ -7,7 +9,7 @@ from http.server import BaseHTTPRequestHandler
 import json
 import re
 from urllib.parse import urlparse, parse_qs
-from api._lib.db import get_client, create_lead, list_leads, log_activity
+from _lib.db import get_client, create_lead, list_leads, log_activity
 
 FREE_EMAILS = {"gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "aol.com", "icloud.com"}
 

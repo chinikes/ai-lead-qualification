@@ -1,10 +1,12 @@
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 """
 GET /api/analytics — Dashboard metrics and stats.
 """
 
 from http.server import BaseHTTPRequestHandler
 import json
-from api._lib.db import get_client, get_analytics
+from _lib.db import get_client, get_analytics
 
 
 class handler(BaseHTTPRequestHandler):

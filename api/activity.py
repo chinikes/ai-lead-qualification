@@ -1,3 +1,5 @@
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 """
 GET /api/activity — Activity feed for the dashboard.
 """
@@ -5,7 +7,7 @@ GET /api/activity — Activity feed for the dashboard.
 from http.server import BaseHTTPRequestHandler
 import json
 from urllib.parse import urlparse, parse_qs
-from api._lib.db import get_client, get_activity
+from _lib.db import get_client, get_activity
 
 
 class handler(BaseHTTPRequestHandler):
