@@ -6,7 +6,7 @@ GET /api/analytics — Dashboard metrics and stats.
 
 from http.server import BaseHTTPRequestHandler
 import json
-from _lib.db import get_client, get_analytics
+from _db import get_client, get_analytics
 
 
 class handler(BaseHTTPRequestHandler):

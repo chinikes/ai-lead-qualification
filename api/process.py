@@ -8,7 +8,7 @@ Body: { "lead_id": "uuid" }
 from http.server import BaseHTTPRequestHandler
 import json
 import asyncio
-from _lib.db import get_client, get_lead
+from _db import get_client, get_lead
 from _pipeline import run_pipeline
 
 
