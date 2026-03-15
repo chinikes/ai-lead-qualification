@@ -5,7 +5,7 @@ GET /api/activity — Activity feed for the dashboard.
 from http.server import BaseHTTPRequestHandler
 import json
 from urllib.parse import urlparse, parse_qs
-from _lib.db import get_client, get_activity
+from api._lib.db import get_client, get_activity
 
 
 class handler(BaseHTTPRequestHandler):

@@ -7,7 +7,7 @@ from http.server import BaseHTTPRequestHandler
 import json
 import re
 from urllib.parse import urlparse, parse_qs
-from _lib.db import get_client, create_lead, list_leads, log_activity
+from api._lib.db import get_client, create_lead, list_leads, log_activity
 
 FREE_EMAILS = {"gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "aol.com", "icloud.com"}
 
