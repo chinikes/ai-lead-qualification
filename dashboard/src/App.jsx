@@ -68,8 +68,8 @@ function PipelineFunnel({ leads }) {
 
 /* ── Transform DB lead to display format ─────────── */
 function transformLead(dbLead) {
-  const score = dbLead.scores?.[0] || {};
-  const route = dbLead.routing?.[0] || {};
+  const score = Array.isArray(dbLead.scores) ? (dbLead.scores[0] || {}) : (dbLead.scores || {});
+  const route = Array.isArray(dbLead.routing) ? (dbLead.routing[0] || {}) : (dbLead.routing || {});
   const signals = (dbLead.ai_buying_signals || []).map(s => typeof s === "string" ? s : s.signal).filter(Boolean);
   const pains = (dbLead.ai_pain_points || []).map(p => typeof p === "string" ? p : p.pain_point).filter(Boolean);
   return {
