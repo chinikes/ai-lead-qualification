@@ -1,3 +1,5 @@
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 """
 POST /api/process — Run the enrichment → AI → scoring pipeline on a lead.
 Body: { "lead_id": "uuid" }
