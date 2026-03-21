@@ -5,31 +5,55 @@ Adapted from the original QualificationAgent for serverless use.
 
 import re
 
-# ── ICP constants (same as settings.py) ──────────────
+# ── ICP constants for AgileDevs Consulting ────────
+# AgileDevs offers: Project Management consulting, Workflow Automation
+# (n8n, Make.com), Atlassian Administration (Jira, Confluence, JSM),
+# ERP/CRM implementations (Salesforce, NetSuite, Dynamics 365),
+# and SaaS/PaaS delivery.
+
 TARGET_INDUSTRIES = [
-    "saas", "technology", "software", "financial services",
-    "healthcare technology", "e-commerce", "digital marketing",
-    "professional services", "manufacturing",
+    "saas", "technology", "software", "financial services", "fintech",
+    "healthcare", "healthcare technology", "e-commerce", "professional services",
+    "manufacturing", "information technology", "managed services",
+    "telecommunications", "media", "education", "nonprofit",
+    "construction", "real estate", "logistics", "energy",
 ]
 TARGET_TITLES = [
-    "vp of sales", "vp sales", "head of sales", "sales director",
-    "chief revenue officer", "cro", "vp revenue operations",
-    "head of revenue operations", "director of sales operations",
-    "vp of business development", "head of growth", "coo",
+    "cto", "cio", "coo", "vp of engineering", "vp engineering",
+    "vp of operations", "vp operations", "head of engineering",
+    "director of engineering", "director of it", "director of operations",
+    "head of it", "head of operations", "it director", "it manager",
+    "engineering manager", "product manager", "program manager",
+    "project manager", "head of product", "vp of product",
+    "director of product", "chief digital officer", "digital transformation lead",
+    "operations manager", "business operations manager",
+    "director of technology", "head of technology",
 ]
-TARGET_DEPTS = ["sales", "revenue operations", "business development", "growth"]
+TARGET_DEPTS = [
+    "engineering", "it", "operations", "product", "technology",
+    "digital transformation", "business operations", "project management",
+]
 POSITIVE_TECH = [
-    "salesforce", "hubspot", "outreach", "salesloft", "gong",
-    "zoominfo", "apollo", "6sense", "drift", "intercom",
-    "marketo", "pardot", "zapier", "make", "n8n",
+    "jira", "confluence", "atlassian", "jira service management", "jsm",
+    "salesforce", "hubspot", "netsuite", "dynamics 365", "microsoft dynamics",
+    "n8n", "make", "make.com", "zapier", "airtable",
+    "slack", "asana", "monday.com", "trello", "linear",
+    "github", "gitlab", "bitbucket", "azure devops",
+    "vercel", "aws", "gcp", "azure", "heroku",
+    "notion", "clickup",
 ]
 HIGH_INTENT = [
-    "pricing", "demo", "trial", "buy", "purchase", "implement",
-    "migrate", "replace", "budget", "timeline", "roi", "cost",
+    "consulting", "implementation", "migration", "automate", "automation",
+    "integrate", "integration", "jira setup", "workflow", "project management",
+    "erp", "crm", "help with", "need someone", "looking for a consultant",
+    "budget", "timeline", "proposal", "rfp", "sow", "engagement",
+    "outsource", "contractor", "freelancer", "agency",
 ]
 MED_INTENT = [
-    "interested", "learn more", "information", "compare",
-    "evaluate", "automate", "streamline", "improve",
+    "interested", "learn more", "information", "evaluate",
+    "streamline", "improve", "optimize", "scale", "growing",
+    "challenges", "pain", "struggling", "manual process",
+    "spreadsheet", "too many tools", "disorganized",
 ]
 SOURCE_SCORES = {
     "referral": 25, "web_form": 20, "chat_widget": 18,

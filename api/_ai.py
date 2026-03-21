@@ -70,9 +70,19 @@ async def analyze_lead(lead: dict) -> dict | None:
 
 def _build_prompt(lead: dict) -> str:
     industry = lead.get("company_industry") or "Unknown"
-    return f"""You are an expert B2B sales analyst. Analyze this lead and respond with ONLY a JSON object.
+    return f"""You are an expert B2B consultant sales analyst working for AgileDevs Consulting. Analyze this lead to determine if they are a good fit for our services. Respond with ONLY a JSON object.
 
-## Company
+## About AgileDevs Consulting
+AgileDevs provides three core service lines:
+1. **Project Management Consulting** — Agile delivery, program management, ERP/CRM implementations (Salesforce, NetSuite, Dynamics 365), SaaS/PaaS rollouts
+2. **Workflow Automation** — Building automated workflows using n8n, Make.com, Zapier; integrating business tools (HubSpot, Jira, Slack, Airtable); process automation
+3. **Atlassian Administration** — Jira, Confluence, Jira Service Management setup, configuration, migration, and optimization
+
+Our ideal clients: Mid-market companies (20-2000 employees) in technology, SaaS, fintech, healthcare, professional services, or manufacturing who need help with digital transformation, tool consolidation, process automation, or scaling their operations. We work with CTOs, VPs of Engineering, IT Directors, Operations leaders, and Product/Program Managers.
+
+## Lead to Analyze
+
+### Company
 - Name: {lead.get('company_legal_name') or lead.get('company_name') or 'Unknown'}
 - Domain: {lead.get('company_domain') or 'Unknown'}
 - Industry: {industry} / {lead.get('company_sub_industry') or 'Unknown'}
@@ -83,30 +93,32 @@ def _build_prompt(lead: dict) -> str:
 - Description: {lead.get('company_description') or 'None'}
 - Tech Stack: {', '.join((lead.get('company_technologies') or [])[:12])}
 
-## Contact
+### Contact
 - Name: {lead.get('contact_full_name') or lead.get('first_name', '') + ' ' + lead.get('last_name', '')}
 - Title: {lead.get('contact_title') or lead.get('job_title') or 'Unknown'}
 - Seniority: {lead.get('contact_seniority') or 'unknown'}
 - Decision Maker: {lead.get('contact_is_decision_maker', False)}
 
-## Message
+### Message
 {lead.get('message') or 'None'}
 
-## ICP Criteria
-- Target: SaaS, Technology, Financial Services, Healthcare Tech, E-commerce, Professional Services
-- Size: 20-5000 employees
-- Titles: VP Sales, CRO, Director Sales Ops, Head of Growth, COO
-- Positive tech: Salesforce, HubSpot, Outreach, Gong, ZoomInfo, Apollo
+## Analysis Instructions
+Evaluate this lead for AgileDevs' services. Consider:
+- Does the company size and industry suggest they need external PM/automation consulting?
+- Is the contact in a role that would hire or influence hiring consultants (CTO, VP Eng, IT Director, Ops Manager, PM)?
+- Does their tech stack suggest Atlassian/Jira work, CRM implementation needs, or automation opportunities?
+- Are there signals of growth, scaling challenges, tool sprawl, or process inefficiency?
+- Would they benefit from n8n/Make workflow automation, Jira/Confluence administration, or Agile delivery consulting?
 
 Respond with ONLY this JSON (no markdown fencing):
 {{
-  "company_summary": "2-3 sentences",
-  "icp_fit_narrative": "why this does/doesn't match ICP",
+  "company_summary": "2-3 sentences about the company and their likely operational context",
+  "icp_fit_narrative": "why this lead does/doesn't match AgileDevs' ICP — reference specific service lines",
   "icp_fit_score": 0.0 to 1.0,
-  "buying_signals": [{{"signal": "", "source": "", "strength": "strong|moderate|weak"}}],
-  "pain_points": [{{"pain_point": "", "evidence": "", "relevance_to_product": "high|medium|low"}}],
-  "recommended_talking_points": ["point1", "point2"],
+  "buying_signals": [{{"signal": "description", "source": "what indicates this", "strength": "strong|moderate|weak"}}],
+  "pain_points": [{{"pain_point": "description", "evidence": "what suggests this", "relevance_to_product": "high|medium|low"}}],
+  "recommended_talking_points": ["specific talking points for AgileDevs rep to use"],
   "urgency_assessment": "immediate|near_term|exploratory|not_ready",
   "confidence": 0.0 to 1.0,
-  "reasoning": "step-by-step explanation"
+  "reasoning": "step-by-step explanation of the scoring"
 }}"""
